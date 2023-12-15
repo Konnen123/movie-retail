@@ -1,0 +1,139 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using MovieRetail.Areas.Identity.Data
+@using MovieRetail.GenreType
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Home Page";
+}
+@model MovieHomeViewModel
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (!SignInManager.IsSignedIn(User))
+{
+    <div class="text-center">
+        <br/>
+        <br/>
+        <h1 class="display-4">MREAL</h1>
+        <p>Where movies become true.</p>
+    </div>
+}
+else
+{
+    <div>
+        @{
+            if (Model.FavoriteMovies != null)
+            {
+
+                List<Movie> allFavoriteMovies = new List<Movie>();
+
+                int enumSize = Enum.GetValues(typeof(GenreType)).Length;
+
+                List<int> frequencyList = new List<int>();
+                
+                for (int i = 0; i < enumSize; i++)
+                {
+                    frequencyList.Add(0);
+                }
+
+                foreach (var favoriteMovie in Model.FavoriteMovies)
+                {
+                    var movieData = Model.movie.FirstOrDefault(movie=>movie.Id==favoriteMovie.MovieId);
+                    if(movieData==null)
+                        continue;
+
+                    int genreNumber = (int)movieData.Genre;
+                    if(frequencyList[genreNumber]==1)
+                        continue;
+
+                    frequencyList[genreNumber] = 1;
+
+                    var otherMoviesAlike = Model.movie.Where(movie => movie.Genre == movieData.Genre);
+
+                    if (otherMoviesAlike == null)
+                        continue;
+
+                    allFavoriteMovies.AddRange(otherMoviesAlike);
+
+                }
+
+
+                foreach (var favMovie in Model.FavoriteMovies)
+                {
+                    if (allFavoriteMovies.Any(movie => movie.Id == favMovie.MovieId))
+                    {
+                        var movie = allFavoriteMovies.FirstOrDefault(m => m.Id == favMovie.MovieId);
+                        allFavoriteMovies.Remove(movie);
+                    }
+                        
+                }
+                Random random = new Random();
+                var randomizedAllFavoriteMovies = allFavoriteMovies.OrderBy(movie => random.Next());
+                int index = 0;
+
+                if (randomizedAllFavoriteMovies != null)
+                {
+                    <br/>
+                    <h3>Based on your favorites, you would also like: </h3>
+                }
+                <div class="d-flex">
+                    @foreach (var movie in randomizedAllFavoriteMovies)
+                    {
+                        if (index >= 3)
+                            break;
+                    
+                        if (movie == null)
+                            continue;
+
+                        <div class="p-2" style="width: 33.33%;">
+                            @{
+                                byte[] tempImageBytes = movie.ImageData;
+                                string tempBase64Image = Convert.ToBase64String(tempImageBytes);
+                                string tempDataUrl = $"data:{movie.ImageContentType};base64,{tempBase64Image}";
+                            }
+                            <a class="nav-link" asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id">
+                                <img src="@tempDataUrl" class="img-fluid" style="object-fit: contain;"/>
+                            </a>
+                        </div>
+                        index++;
+                    }
+                </div>
+            }
+        }
+    </div>
+    <div>
+        <br/>
+        <h3>Top 3 best rated movies: </h3>
+        
+        
+        @{
+            var sortedMovies = Model.movie.OrderByDescending(movie => movie.Rating);
+
+            int jndex = 0;
+            <div class="d-flex">
+            @foreach (var movie in sortedMovies)
+            {
+                if (jndex >= 3)
+                    break;
+                    
+                if (movie == null)
+                    continue;
+
+                <div class="p-2" style="width: 33.33%;">
+                    @{
+                        byte[] tempImageBytes = movie.ImageData;
+                        string tempBase64Image = Convert.ToBase64String(tempImageBytes);
+                        string tempDataUrl = $"data:{movie.ImageContentType};base64,{tempBase64Image}";
+                    }
+                    <a class="nav-link" asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id">
+                        <img src="@tempDataUrl" class="img-fluid" style="object-fit: contain;"/>
+                    </a>
+                </div>
+                jndex++;
+            }
+            </div>
+        }
+    </div>
+
+}

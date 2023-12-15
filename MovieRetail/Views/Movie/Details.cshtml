@@ -1,0 +1,171 @@
+﻿@using MovieRetail.Areas.Identity.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using System.Security.Claims
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@model MovieViewModel
+
+@{
+    ViewData["Title"] = "Details";
+}
+@if (Model == null)
+{
+    <br/>
+    <div width="50%" style="text-align: center;">
+        <h1>Movie not available</h1>
+    </div>
+}
+else
+{
+    <div>
+        
+        @{
+
+            int id = int.Parse(ViewData["id"].ToString());
+            Movie currentMovie = Model.movies.FirstOrDefault(movie =>movie.Id==id);
+            IEnumerable<Movie> recommendedMovies = Model.movies.Where(movie => movie.Genre == currentMovie.Genre && movie!=currentMovie);
+
+            Random random = new Random();
+            recommendedMovies = recommendedMovies.OrderBy(movie => random.Next());
+            
+        }
+    </div>
+    <div>
+        @{
+            byte[] imageBytes = currentMovie.ImageData;
+            string base64Image = Convert.ToBase64String(imageBytes);
+            string dataUrl = $"data:{currentMovie.ImageContentType};base64,{base64Image}";
+        }
+    </div>
+  
+
+<br/>
+    <div width="50%" style="text-align: center;">
+        <h1>@currentMovie.Title</h1>
+    </div>
+
+    <div class="w-40 btn-group" role="group">
+        @if (ViewData["favoriteMovie"].Equals("yellow"))
+        {
+            <a asp-controller="Favorite" asp-action="AddOrRemoveFromFavoriteList" asp-route-movieId="@currentMovie.Id" class="btn btn-warning mx-2 "><i class="bi bi-star-fill"></i></a>
+        }
+        else
+        {
+            <a asp-controller="Favorite" asp-action="AddOrRemoveFromFavoriteList" asp-route-movieId="@currentMovie.Id" class="btn btn-danger mx-2 "><i class="bi bi-x-circle"></i></a>
+        }
+       
+    </div>
+    
+    <div style="text-align: center;">
+        @{
+            int linkId = currentMovie.VideoLink.IndexOf('=');
+            string s = currentMovie.VideoLink.Substring(linkId + 1);
+            string final = $"https://www.youtube.com/embed/{s}";
+        }
+        <iframe width="900" height="500" src=@final>
+        </iframe>
+    </div>
+    
+    <br/>
+    <h1>Rating : @currentMovie.Rating/10.0 <i class="bi bi-star-fill"></i></h1>
+
+    <br/>
+    <h1>Genre: @currentMovie.Genre</h1>
+
+    <br/>
+    <h1>Info <i class="bi bi-info-circle-fill"></i></h1>
+
+    <p>@currentMovie.Info</p>
+    <br/>
+
+    <h1>You may also want to see:</h1>
+    
+    <div class="d-flex">
+        @{
+            int index = 0;
+            foreach (var movie in recommendedMovies)
+            {
+                if(index>=3)
+                    break;
+                <div class="p-2" style="width: 33.33%;">
+                    @{
+                        byte[] tempImageBytes = movie.ImageData;
+                        string tempBase64Image = Convert.ToBase64String(tempImageBytes);
+                        string tempDataUrl = $"data:{movie.ImageContentType};base64,{tempBase64Image}";
+                    }
+                    <a class="nav-link" asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id">
+                        <img src="@tempDataUrl" class="img-fluid" style="object-fit: contain;" />
+                    </a>
+                </div>
+                index++;
+            }
+        }
+    </div>
+
+
+    @if (SignInManager.IsSignedIn(User) && await UserManager.IsInRoleAsync(UserManager.GetUserAsync(User).Result,"admin"))
+    {
+        <div class="w-40 btn-group" role="group">
+            <a asp-controller="Movie" asp-action="Edit" asp-route-id="@currentMovie.Id" class="btn btn-primary mx-2 "><i class="bi bi-pencil-square"></i></a>
+            <a asp-controller="Movie" asp-action="Delete" asp-route-id="@currentMovie.Id" class="btn btn-danger mx-2 "><i class="bi bi-trash3-fill"></i></a>
+        </div>
+    }
+    <br/>
+    <br/>
+    <h1>Comments</h1>   
+    <br/>
+
+    <form asp-controller="CommentSection" asp-action="AddComment" asp-route-movieId="@id" method="post">
+        <!-- Other form elements... -->
+
+        <div class="form-group">
+            <label asp-for="@Model.commentSection.Title" class="control-label">Title</label>
+            <input asp-for="@Model.commentSection.Title" required="true" class="form-control"/>
+            <span asp-validation-for="@Model.commentSection.Title" class="text-danger"></span>
+        </div>
+        <br/>
+        <div class="form-group">
+            <label asp-for="@Model.commentSection.Comment" class="control-label">Comment</label>
+            <textarea asp-for="@Model.commentSection.Comment" required="true" class="form-control"> </textarea>
+            <span asp-validation-for="@Model.commentSection.Comment" class="text-danger"></span>
+        </div>
+        <!-- Other form elements... -->
+        <br/>
+        <button type="submit" class="btn btn-success">Submit</button>
+    </form>
+ 
+    <br/>
+    <br/>
+    <div class="comment-section">
+        @{
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            foreach (var comment in Model.allComments)
+            {
+                <div class="comment">
+                    <p><small>@comment.Time</small></p>
+                    <strong>@comment.FirstName @comment.LastName</strong>
+                    <h5>@comment.Title</h5>
+                    <textarea class="form-control bg-light" disabled>@comment.Comment</textarea>
+
+                    @if ((SignInManager.IsSignedIn(User) && await UserManager.IsInRoleAsync(UserManager.GetUserAsync(User).Result, "admin")) || comment.UserId == userId)
+                    {
+                        <br/>
+                        <div class="w-40 btn-group" role="group">
+                            <form asp-controller="CommentSection" asp-action="DeleteComment" asp-route-id="@comment.Id" asp-route-movieId="@comment.MovieId" method="post">
+                                <button type="submit" class="btn btn-danger"><i class="bi bi-trash3-fill"></i></button>
+                            </form>
+                        </div>
+                    }
+
+                </div>
+                <hr/>
+            }
+        }
+    </div>
+    
+}
+
+
