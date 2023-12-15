@@ -1,0 +1,63 @@
+﻿@using MovieRetail.GenreType
+@model Movie
+
+@{
+    ViewData["Title"] = "Create";
+   
+}
+<br/>
+<h1>Create Movie</h1>
+
+<br/>
+
+<div class="row">
+    <div class="col md-4">
+        <form asp-action="CreateMovie" asp-controller="Movie" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="All"></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Title" class="control-label"></label>
+                <input asp-for="Title" class="form-control"/>
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+            <br/>
+            <div class="form-group">
+                <label asp-for="Info" class="control-label"></label>
+                <input asp-for="Info" class="form-control"/>
+                <span asp-validation-for="Info" class="text-danger"></span>
+            </div>
+            <br/>
+            <div class="form-group">
+                <label asp-for="Genre" class="control-label"></label>
+                <select asp-for="Genre" asp-items="Html.GetEnumSelectList<GenreType>()" class="form-control">
+                    <option value="">Select Genre</option>
+                </select>
+                <span asp-validation-for="Genre" class="text-danger"></span>
+            </div>
+            <br/>
+            <div class="form-group">
+                <label asp-for="Rating"></label>
+                <input asp-for="Rating" type="number" step="any" class="form-control-number"/>
+                <span asp-validation-for="Rating" class="text-danger"></span>
+            </div>
+            <br/>
+            <div class="form-group">
+                <label asp-for="ImageData">Upload Image:</label>
+                <input asp-for="ImageData" type="file" class="form-control-file"/>
+                <span asp-validation-for="ImageData" class="text-danger"></span>
+            </div>
+            <br/>
+            <div class="form-group">
+                <label asp-for="VideoLink">Upload Video:</label>
+                <input asp-for="VideoLink" type="url" class="form-control"/>
+                <span asp-validation-for="VideoLink" class="text-danger"></span>
+            </div>
+
+            <br/>
+            <br/>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary"/>
+            </div>
+        </form>
+    </div>
+</div>

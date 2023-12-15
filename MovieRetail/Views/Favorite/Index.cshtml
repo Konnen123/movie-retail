@@ -1,0 +1,148 @@
+﻿@using MovieRetail.GenreType
+@using MovieRetail.SortMovies
+@using Microsoft.OpenApi.Extensions
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model IEnumerable<Movie> 
+@{
+    ViewData["Title"] = "Index";
+   
+}
+<br/>
+<div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+    <button type="button" class="btn btn-primary">@((GenreType)ViewData["Dropdown"])</button>
+    <div class="btn-group" role="group">
+        <button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+        <div class="dropdown-menu" aria-labelledby="btnGroupDrop1" style="">
+            @{
+                GenreType[] genreType = (GenreType[])Enum.GetValues(typeof(GenreType));
+                    
+                foreach (var type in genreType)
+                {
+                    <a class="dropdown-item" asp-controller="Favorite" asp-action="Index" asp-route-type="@type" asp-route-sort="@((SortMovies)ViewData["Sort"])">@type.ToString()</a>
+                }
+
+            }
+    
+        </div>
+    </div>
+   
+</div>
+@{
+    var sortType = (SortMovies)ViewData["Sort"];
+    var currentName = sortType.GetType().GetField(sortType.ToString())
+        .GetCustomAttributes(typeof(DisplayAttribute), false)
+        .OfType<DisplayAttribute>()
+        .FirstOrDefault()?.Name ?? sortType.ToString();
+}
+
+<div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+    <button type="button" class="btn btn-primary">@currentName</button>
+    <div class="btn-group" role="group">
+        <button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+        <div class="dropdown-menu" aria-labelledby="btnGroupDrop1" style="">
+            @{
+                var sortTypes = Enum.GetValues(typeof(SortMovies)).Cast<SortMovies>();
+                    
+                foreach (var type in sortTypes)
+                {
+                    var displayName = type.GetType().GetField(type.ToString())
+                        .GetCustomAttributes(typeof(DisplayAttribute), false)
+                        .OfType<DisplayAttribute>()
+                        .FirstOrDefault()?.Name ?? type.ToString();
+                    <a class="dropdown-item" asp-controller="Favorite" asp-action="Index" asp-route-type="@((GenreType)ViewData["Dropdown"])" asp-route-sort="@type">@displayName</a>
+                }
+
+            }
+
+        </div>
+    </div>
+   
+</div>
+
+@if (!Model.Any())
+{
+    <h2 class="text-primary">There are no movies available.</h2>
+}
+else
+{   <br/>
+
+    <div class="container p-0">
+        <div class="row pt-2">
+        </div>
+    </div>
+
+  
+
+
+    
+
+    <table class="table table-bordered table-striped" style="width:50%">
+        
+        <tbody>
+
+        @if (Model != null && Model.Count() >= 2)
+        {
+            <table>
+                @for (int i = 0; i < Model.Count(); i += 2)
+                {
+                    <tr>
+                        @for (int j = i; j < i + 2 && j < Model.Count(); j++)
+                        {
+                            <td width="50%" style="text-align: center;">
+                                <h3>@Model.ElementAt(j).Title</h3>
+                            </td>
+                        }
+                    </tr>
+                    <tr>
+                            @for (int j = i; j < i + 2 && j < Model.Count(); j++)
+                            {
+                                <td width="50%">
+                                    @{
+                                        byte[] imageBytes = Model.ElementAt(j).ImageData;
+                                        string base64Image = Convert.ToBase64String(imageBytes);
+                                        string dataUrl = $"data:{Model.ElementAt(j).ImageContentType};base64,{base64Image}";
+                                    }
+                                    <a class="nav-link" asp-controller="Movie" asp-action="Details" asp-route-id="@Model.ElementAt(j).Id">
+                                        <img src="@dataUrl" width="100%" style="object-fit: contain;" />
+                                    </a>
+                                </td>
+                            }
+                        </tr>
+                       
+                }
+            </table>
+        }
+        else if (Model!=null && Model.Count() == 1)
+        {
+
+            <tr>
+                <td width="50%" style="text-align: center;">
+                    <h3>@Model.ElementAt(0).Title</h3>
+                </td>
+            </tr>
+            <tr>
+                <td width="50%">
+                    @{
+                        byte[] imageBytes = Model.ElementAt(0).ImageData;
+                        string base64Image = Convert.ToBase64String(imageBytes);
+                        string dataUrl = $"data:{Model.ElementAt(0).ImageContentType};base64,{base64Image}";
+                    }
+                    <a class="nav-link" asp-controller="Movie" asp-action="Details" asp-route-id="@Model.ElementAt(0).Id">
+                        <img src="@dataUrl" width="100%" style="object-fit: contain;" />
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+
+    </table>
+    
+}
+@section Scripts
+{
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
+}
+
